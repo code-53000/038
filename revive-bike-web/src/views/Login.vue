@@ -7,7 +7,7 @@
         <p>让旧自行车重获新生</p>
       </div>
       <el-form
-        ref="loginForm"
+        ref="loginFormRef"
         :model="loginForm"
         :rules="rules"
         class="login-form"
