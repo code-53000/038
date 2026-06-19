@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: revive-bike-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: revive_bike
+      MYSQL_USER: revive
+      MYSQL_PASSWORD: revive123
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./revive-bike-api/init:/docker-entrypoint-initdb.d
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - revive-bike-network
+
+  api:
+    build:
+      context: ./revive-bike-api
+      dockerfile: Dockerfile
+    container_name: revive-bike-api
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: revive
+      DB_PASSWORD: revive123
+      DB_NAME: revive_bike
+      JWT_SECRET_KEY: your-secret-key-change-in-production
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: 1440
+    depends_on:
+      - mysql
+    volumes:
+      - ./revive-bike-api:/app
+    networks:
+      - revive-bike-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  web:
+    build:
+      context: ./revive-bike-web
+      dockerfile: Dockerfile
+    container_name: revive-bike-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - revive-bike-network
+
+volumes:
+  mysql-data:
+
+networks:
+  revive-bike-network:
+    driver: bridge
